@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions
 from django.contrib.auth.models import User
 from .serializers import RegisterSerializer, UserSerializer
+from drf_spectacular.utils import extend_schema
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -84,16 +85,29 @@ from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from .models import Todo
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+@extend_schema(
+    methods=["POST"],
+    description="Create a new TODO item.",
+    responses={201: None}
+)
+@api_view(['POST'])
 @login_required
-@require_POST
 def add_todo(request):
     title = request.POST.get('title')
     if title:
         Todo.objects.create(user=request.user, title=title)
     return redirect('home')
 
+@extend_schema(
+    methods=["POST"],
+    description="Delete a TODO item by ID.",
+    responses={204: None}
+)
+@api_view(['POST'])
 @login_required
-@require_POST
 def delete_todo(request, pk):
     todo = get_object_or_404(Todo, pk=pk, user=request.user)
     todo.delete()
@@ -102,8 +116,13 @@ def delete_todo(request, pk):
 
 from django.views.decorators.http import require_POST
 
+@extend_schema(
+    methods=["POST"],
+    description="Mark a TODO as completed.",
+    responses={200: None}
+)
+@api_view(['POST'])
 @login_required
-@require_POST
 def complete_todo(request, pk):
     todo = get_object_or_404(Todo, pk=pk, user=request.user)
     todo.completed = True
