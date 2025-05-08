@@ -1,0 +1,10 @@
+{
+  "name": "theme",
+  "version": "1.0.0",
+  "scripts": {
+  "build": "npx tailwindcss -i ./static_src/css/input.css -o ./static_src/css/styles.css --minify"
+},
+  "devDependencies": {
+    "tailwindcss": "^3.3.0"
+  }
+}
