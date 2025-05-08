@@ -1,7 +1,14 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from django.contrib.auth.models import User
 from .serializers import RegisterSerializer, UserSerializer
 from drf_spectacular.utils import extend_schema
+
+from django.views.decorators.http import require_POST
+from django.shortcuts import get_object_or_404
+from .models import Todo
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -72,6 +79,18 @@ def home_view(request):
     todos = Todo.objects.filter(user=request.user)
     return render(request, 'main/home.html', {'todos': todos})
 
+@extend_schema(
+    methods=["GET"],
+    description="Create a new TODO item.",
+    responses={200: None, 400: None}
+)
+@api_view(['GET'])
+@login_required
+def todos(request):
+    todoList = Todo.objects.filter(user=request.user)
+    serializer = TodoSerializer(todoList, many=True)
+    return Response(serializer.data)
+
 @login_required
 def profile_view(request):
     return render(request, 'main/profile.html', {'user': request.user})
@@ -80,18 +99,10 @@ def signout_view(request):
     logout(request)
     return redirect('signin')
 
-
-from django.views.decorators.http import require_POST
-from django.shortcuts import get_object_or_404
-from .models import Todo
-
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-
 @extend_schema(
     methods=["POST"],
     description="Create a new TODO item.",
-    responses={201: None}
+    responses={201: None, 400: None}
 )
 @api_view(['POST'])
 @login_required
@@ -99,19 +110,22 @@ def add_todo(request):
     title = request.POST.get('title')
     if title:
         Todo.objects.create(user=request.user, title=title)
-    return redirect('home')
+        return Response(status=status.HTTP_200_OK)
+    else :
+        print(title)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 @extend_schema(
     methods=["POST"],
     description="Delete a TODO item by ID.",
-    responses={204: None}
+    responses={200: None}
 )
 @api_view(['POST'])
 @login_required
 def delete_todo(request, pk):
     todo = get_object_or_404(Todo, pk=pk, user=request.user)
     todo.delete()
-    return redirect('home')
+    return Response(status=status.HTTP_200_OK)
 
 
 from django.views.decorators.http import require_POST
